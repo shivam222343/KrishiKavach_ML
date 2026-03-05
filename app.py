@@ -40,15 +40,11 @@ from youtube_search import search_videos
 from scraper_service import get_hybrid_facilities
 
 # ── Lifespan for Async Startup ──────────────────────────────────────────────
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+def background_model_loading():
     global yolo_ready, classifier_ready, vit_ready, vit_gen_ready
     global torch, nn, models, T, YOLO, F, ViTForImageClassification, ViTImageProcessor, preprocess
     
-    print("[*] Web server started. Opening port instantly for Render...")
-    print("[*] Loading AI libraries and models in the background...")
-    
-    # Delayed heavy imports to avoid Port Scan timeouts
+    print("[*] Loading AI libraries and models in a background thread...")
     try:
         import torch as _torch
         import torch.nn as _nn
@@ -76,8 +72,15 @@ async def lifespan(app: FastAPI):
         print(f"[+] AI Engine ready. Models: YOLO={yolo_ready}, Classifier={classifier_ready}, ViT={vit_ready}")
     except Exception as e:
         print(f"[-] Startup Failure: {e}")
-        
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    import threading
+    print("[*] Web server starting. Backgrounding model load for Render compatibility...")
+    thread = threading.Thread(target=background_model_loading)
+    thread.start()
     yield
+    # No cleanup really needed for simple server
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(__file__)
