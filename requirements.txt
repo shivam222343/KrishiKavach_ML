@@ -1,0 +1,11 @@
+fastapi>=0.110.0
+uvicorn>=0.29.0
+ultralytics>=8.2.0
+pillow>=10.0.0
+python-multipart>=0.0.9
+sentence-transformers
+youtube-search-python
+google-api-python-client
+requests
+beautifulsoup4
+

@@ -1,0 +1,19 @@
+# Environments
+.env
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Models and Training outputs
+runs/
+*.pt
+
+# Jupyter
+.ipynb_checkpoints/
