@@ -37,6 +37,26 @@ from youtube_search import search_videos
 from transformers import ViTForImageClassification, ViTImageProcessor
 import torch.nn.functional as F
 from scraper_service import get_hybrid_facilities
+from contextlib import asynccontextmanager
+
+# ── Lifespan for Async Startup ──────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # This runs as soon as the server starts, before it's "Ready" 
+    # but AFTER the port is opened.
+    global yolo_ready, classifier_ready, vit_ready, vit_gen_ready
+    print("[*] Server started. Beginning model loading in background...")
+    
+    yolo_ready = load_yolo()
+    classifier_ready = load_classification_models()
+    
+    # We load ViT lazily or in background to ensure port stays open
+    vit_ready = load_vit()
+    vit_gen_ready = load_vit_general()
+    
+    print(f"[+] Startup complete. Models: YOLO={yolo_ready}, Classifier={classifier_ready}, ViT={vit_ready}")
+    yield
+    # Shutdown logic (if any) goes here
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(__file__)
@@ -47,7 +67,7 @@ CLASS_NAMES_PATH = os.path.join(BASE_DIR, "pretrained_models", "class_names.json
 EFFICIENTNET_PATH = os.path.join(BASE_DIR, "pretrained_models", "efficientnet_plant.pth", "efficientnet_plant")
 MOBILENET_PATH = os.path.join(BASE_DIR, "pretrained_models", "mobilenetv2_plant.pth", "mobilenetv2_plant")
 
-app = FastAPI(title="Krishi Kavach Unified ML Server", version="3.0")
+app = FastAPI(title="Krishi Kavach Unified ML Server", version="3.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -265,11 +285,11 @@ def load_mobilenet_fallback():
         print(f"[!] MobileNet setup error: {e}")
     return False
 
-# Load models at startup
-yolo_ready = load_yolo()
-classifier_ready = load_classification_models()
-vit_ready = load_vit()
-vit_gen_ready = load_vit_general()
+# Load models at startup (Moved to lifespan handler above)
+yolo_ready = False
+classifier_ready = False
+vit_ready = False
+vit_gen_ready = False
 
 # ── Transforms ────────────────────────────────────────────────────────────────
 preprocess = T.Compose([
