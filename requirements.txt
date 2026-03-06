@@ -11,4 +11,6 @@ youtube-search-python
 google-api-python-client
 requests
 beautifulsoup4
+python-dotenv
+httpx
 
