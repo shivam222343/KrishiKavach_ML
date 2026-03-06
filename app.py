@@ -8,34 +8,26 @@ Supports:
 Run: python app.py (starts on http://localhost:8000)
 """
 
+# Standard Imports
 import os
 import sys
 import io
 import json
 import uvicorn
+import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
-import torch
-import torch.nn.functional as F
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Local Imports
-from multi_model import MultiModelEnsemble
-from youtube_search import search_videos
-from scraper_service import get_hybrid_facilities
-
-# ── Global Ensemble & Models ────────────────────────────────────────────────
+# Pre-declare globals
 ensemble = None
 vit_gen_ready = False
 vit_gen_model = None
 vit_gen_processor = None
-
-# Imported local services
-from transformers import ViTForImageClassification, ViTImageProcessor
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(__file__)
@@ -53,6 +45,10 @@ def background_model_loading():
     
     print("[*] Loading AI models in a background thread...")
     try:
+        # Heavy Imports
+        from multi_model import MultiModelEnsemble
+        from transformers import ViTForImageClassification, ViTImageProcessor
+        
         # Load Ensemble
         yolo_target = YOLO_MODEL_PATH if os.path.exists(YOLO_MODEL_PATH) else YOLO_FALLBACK
         ensemble = MultiModelEnsemble(
@@ -128,6 +124,9 @@ async def identify_crop(file: UploadFile = File(...)):
         raise HTTPException(status_code=503, detail="Identification model loading")
     
     try:
+        import torch
+        import torch.nn.functional as F
+        
         img_bytes = await file.read()
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         
@@ -150,6 +149,7 @@ async def identify_crop(file: UploadFile = File(...)):
 @app.post("/youtube-search")
 async def youtube_search(query: str = Form(...), language: str = Form(default="english")):
     try:
+        from youtube_search import search_videos
         results = search_videos(query=query, language=language)
         return {"success": True, "videos": results}
     except Exception as e:
@@ -157,6 +157,7 @@ async def youtube_search(query: str = Form(...), language: str = Form(default="e
 
 @app.get("/search-facilities")
 async def search_facilities(lat: float, lon: float, radius: float = 50, city: str = None):
+    from scraper_service import get_hybrid_facilities
     results = get_hybrid_facilities(lat, lon, radius, city)
     return {"success": True, "data": results}
 
