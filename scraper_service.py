@@ -75,20 +75,4 @@ def get_osm_facilities(lat, lon, radius_km=50, city=None):
 def get_hybrid_facilities(lat, lon, radius_km=50, city=None):
     # Try fetching from OSM
     osm_data = get_osm_facilities(lat, lon, radius_km, city)
-    
-    # If OSM returns few results, we simulate 'Scraped' data for specific known hubs
-    # This ensures "real-time" results even if OSM is missing data in India
-    if len(osm_data) < 2 and city:
-        scraped_fallbacks = {
-            "pune": [
-                {"id": "scr_1", "name": "Pune Agri Logistics Hub", "type": "Warehouse", "location": [73.8567, 18.5204], "city": "Pune", "contact": "+91 20 2345 6789", "source": "Scraped/IndiaMart", "image": "https://images.unsplash.com/photo-1553413077-190dd305871c"},
-                {"id": "scr_2", "name": "Hadapsar Cotton Ginning", "type": "Ginning Mill", "location": [73.9272, 18.5089], "city": "Pune", "contact": "+91 20 9876 5432", "source": "Scraped/TradeIndia", "image": "https://images.unsplash.com/photo-1590633717560-49651582e3b2"}
-            ],
-            "sangli": [
-                {"id": "scr_3", "name": "Sangli Turmeric Warehouse", "type": "Warehouse", "location": [74.5815, 16.8524], "city": "Sangli", "contact": "+91 233 4567890", "source": "Scraped/Directories", "image": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d"}
-            ]
-        }
-        fallback = scraped_fallbacks.get(city.lower(), [])
-        return osm_data + fallback
-            
     return osm_data
