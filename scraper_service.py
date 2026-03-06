@@ -11,14 +11,13 @@ def get_osm_facilities(lat, lon, radius_km=50, city=None):
     
     # Improved Query: searching for more specific agricultural and industrial tags
     query = f"""
-    [out:json][timeout:25];
+    [out:json][timeout:8];
     (
-      node["industrial"="well"](around:{radius_meters},{lat},{lon});
       node["man_made"="silo"](around:{radius_meters},{lat},{lon});
-      node["industrial"~"factory|manufacturing"]["product"~"cotton|grain|flour|sugar|oil|seed|crop"](around:{radius_meters},{lat},{lon});
-      way["industrial"~"factory|manufacturing"]["product"~"cotton|grain|flour|sugar|oil|seed|crop"](around:{radius_meters},{lat},{lon});
-      node["landuse"="industrial"]["name"~"Ginning|Mill|Warehouse|Cold Storage|Agri|Cotton|Spinning"](around:{radius_meters},{lat},{lon});
-      way["landuse"="industrial"]["name"~"Ginning|Mill|Warehouse|Cold Storage|Agri|Cotton|Spinning"](around:{radius_meters},{lat},{lon});
+      node["industrial"~"factory|mill"](around:{radius_meters},{lat},{lon});
+      way["industrial"~"factory|mill"](around:{radius_meters},{lat},{lon});
+      node["landuse"="industrial"]["name"~"Mill|Warehouse|Storage|Agri|Cotton"](around:{radius_meters},{lat},{lon});
+      way["landuse"="industrial"]["name"~"Mill|Warehouse|Storage|Agri|Cotton"](around:{radius_meters},{lat},{lon});
       node["shop"="agriculture"](around:{radius_meters},{lat},{lon});
     );
     out body;
@@ -36,7 +35,16 @@ def get_osm_facilities(lat, lon, radius_km=50, city=None):
 
     url = "https://overpass-api.de/api/interpreter"
     try:
-        response = requests.post(url, data={'data': query})
+        response = requests.post(url, data={'data': query}, timeout=10)
+        if response.status_code != 200:
+            print(f"OSM API Error: Status {response.status_code}")
+            return []
+        
+        # Check if response is actually JSON
+        if "application/json" not in response.headers.get("Content-Type", "").lower():
+            print(f"OSM API Error: Non-JSON response received")
+            return []
+
         data = response.json()
         
         facilities = []
